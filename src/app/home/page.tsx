@@ -98,7 +98,7 @@ export default function HomePage() {
     <div className="min-h-screen font-body text-on-surface">
       <nav className="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-xl flex justify-between items-center px-8 h-20 shadow-[0_0_24px_rgba(232,80,10,0.15)]">
         <div className="text-2xl font-black text-white italic font-headline tracking-tight">
-          StackForge
+          StackForges
         </div>
         <div className="hidden md:flex items-center gap-8">
           <a
