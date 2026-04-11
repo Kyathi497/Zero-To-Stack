@@ -1,10 +1,12 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
   
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -12,12 +14,13 @@ async function bootstrap() {
   }));
 
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: configService.get<string>('FRONTEND_URL') || 'http://localhost:3000',
     credentials: true,
   });
 
-  await app.listen(4000);
-  console.log('Backend running on http://localhost:4000');
+  const port = configService.get<number>('PORT') || 4000;
+  await app.listen(port);
+  console.log(`Backend running on http://localhost:${port}`);
 }
 
 bootstrap();
