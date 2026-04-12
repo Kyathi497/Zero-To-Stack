@@ -118,85 +118,7 @@ accessLog: {
 
 ---
 
-### 3️⃣ Recorded Video Content Management
-
-**Feature:** Video library with restricted access for registered/paid students
-
-**Video Source Options:**
-- Upload recorded Google Meet videos
-- Upload manually recorded tutorials
-- Support for multiple video quality/formats
-
-**Implementation Requirements:**
-- Secure video storage (cloud - AWS S3, Google Cloud Storage, or equivalent)
-- Video streaming with access control (no direct URL exposure)
-- Playlist organization by course modules
-- Video progress tracking (where student stopped)
-- Adaptive bitrate streaming (different qualities based on connection)
-- Prevent screen recording/downloading (DRM optional but recommended)
-- Search and filter videos by topic/module
-- Subtitle/transcript support
-
-**Video Management Features:**
-- Upload interface for instructor (simple drag-drop)
-- Auto-generate thumbnails
-- Edit video metadata (title, description, module assignment)
-- Delete/archive videos
-- View analytics (watch time, completion rate, rewatch count)
-
-**Access Control:**
-- Only accessible to students with `paymentStatus = true`
-- Cannot share direct video URLs
-- Login required to watch
-- Rate limiting on video requests (prevent mass downloads)
-
-**Database Schema:**
-```
-videos: {
-  _id,
-  courseId,
-  title,
-  description,
-  moduleNumber,
-  videoUrl (cloud storage reference),
-  thumbnail,
-  duration,
-  uploadDate,
-  updatedBy (instructor),
-  metadata {
-    resolution,
-    bitrate,
-    subtitles (true/false),
-    transcript
-  },
-  restricted (true - paid students only)
-}
-
-videoProgress: {
-  _id,
-  studentId,
-  videoId,
-  watchTime (seconds watched),
-  totalTime,
-  completionPercentage,
-  lastWatchedAt,
-  markedComplete (true/false)
-}
-
-videoAnalytics: {
-  _id,
-  videoId,
-  totalViews,
-  uniqueViewers,
-  averageWatchTime,
-  completionRate,
-  replayCount
-}
-```
-
----
-
-### 4️⃣ Student Progress Dashboard
+### 3️⃣ Student Progress Dashboard
 
 **Feature:** Syllabus completion tracking updated by instructor
 
@@ -206,13 +128,10 @@ videoAnalytics: {
 - **Overall Progress:** Visual percentage bar showing syllabus completion
 - **Module Breakdown:** 
   - List all course modules
-  - Each module shows: completion %, videos watched/total, classes attended/total
+  - Each module shows: completion %, classes attended/total
 - **Class Calendar:** Upcoming and past classes with recording links
-- **Video Library:** Organized by modules with progress indicators
 - **Stats Panel:**
   - Classes attended
-  - Videos watched
-  - Total watch hours
   - Current streak (consecutive days of learning)
 - **Personal Goals:** Student can set targets (e.g., complete X modules by date)
 
@@ -235,12 +154,6 @@ videoAnalytics: {
   - Individual student detailed view
   - Export progress reports (CSV/PDF)
   - Identify students falling behind (alert system)
-
-- **Video Management:**
-  - Upload videos to modules
-  - Set video as mandatory vs optional
-  - View video analytics
-  - Re-order videos within modules
 
 - **Notifications:**
   - Send class reminders to students
@@ -292,10 +205,8 @@ studentProgress: {
   enrollmentDate,
   completionPercentage,
   modulesCompleted: [moduleIds],
-  videosWatched: [videoIds],
   classesAttended: [classIds],
   lastActivityDate,
-  totalWatchHours,
   streakDays,
   personalGoals: [
     {
@@ -311,7 +222,7 @@ studentProgress: {
 courseUpdates: {
   _id,
   courseId,
-  updateType (module-completed/syllabus-updated/video-added),
+  updateType (module-completed/syllabus-updated/class-added),
   description,
   changes: {},
   updatedBy (instructorId),
@@ -321,7 +232,7 @@ courseUpdates: {
 
 auditLog: {
   _id,
-  action (payment-verified/class-scheduled/module-completed/video-uploaded),
+  action (payment-verified/class-scheduled/module-completed),
   performedBy (instructorId),
   affectedStudent (studentId - optional),
   details: {},
@@ -350,11 +261,8 @@ auditLog: {
 - users (students + instructors)
 - courses
 - classes
-- videos
 - payments
 - studentProgress
-- videoProgress
-- videoAnalytics
 - courseUpdates
 - auditLog
 
@@ -368,9 +276,8 @@ auditLog: {
 - Input validation and sanitization
 - CORS properly configured
 - Rate limiting on payment endpoints
-- Video URLs never exposed to frontend
+- Meet links never exposed to unpaid students
 - Database queries parameterized (prevent injection)
-- Secure file upload validation
 - Payment webhook signature verification
 
 ---
@@ -389,7 +296,7 @@ auditLog: {
 ## 🚀 Development Phases
 
 **Phase 1 (MVP):** Payment + Student Auth + Basic Dashboard
-**Phase 2:** Google Meet Integration + Video Upload
+**Phase 2:** Google Meet Integration + Class Scheduling
 **Phase 3:** Advanced Analytics + Progress Tracking
 **Phase 4:** Automated Notifications + Reporting
 

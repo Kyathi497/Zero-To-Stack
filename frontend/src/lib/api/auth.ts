@@ -6,6 +6,7 @@ export interface User {
   email: string;
   phone?: string;
   role: "STUDENT" | "ADMIN";
+  paymentStatus: boolean;
 }
 
 export async function signupApi(data: {
