@@ -3,19 +3,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    const configService = app.get(config_1.ConfigService);
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         transform: true,
     }));
     app.enableCors({
-        origin: 'http://localhost:3000',
+        origin: configService.get('FRONTEND_URL') || 'http://localhost:3000',
         credentials: true,
     });
-    await app.listen(4000);
-    console.log('Backend running on http://localhost:4000');
+    const port = configService.get('PORT') || 4000;
+    await app.listen(port);
+    console.log(`Backend running on http://localhost:${port}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

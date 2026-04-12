@@ -46,24 +46,27 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
+const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
-    constructor(jwtService) {
+    constructor(prisma, jwtService) {
+        this.prisma = prisma;
         this.jwtService = jwtService;
-        this.users = [];
     }
     async signup(signupDto) {
-        const existingUser = this.users.find(u => u.email === signupDto.email);
+        const existingUser = await this.prisma.user.findUnique({
+            where: { email: signupDto.email },
+        });
         if (existingUser) {
             throw new common_1.ConflictException('Email already exists');
         }
         const hashedPassword = await bcrypt.hash(signupDto.password, 10);
-        const user = {
-            id: Date.now().toString(),
-            email: signupDto.email,
-            password: hashedPassword,
-            name: signupDto.name,
-        };
-        this.users.push(user);
+        const user = await this.prisma.user.create({
+            data: {
+                email: signupDto.email,
+                password: hashedPassword,
+                name: signupDto.name,
+            },
+        });
         const token = this.jwtService.sign({ sub: user.id, email: user.email });
         return {
             access_token: token,
@@ -75,7 +78,9 @@ let AuthService = class AuthService {
         };
     }
     async login(loginDto) {
-        const user = this.users.find(u => u.email === loginDto.email);
+        const user = await this.prisma.user.findUnique({
+            where: { email: loginDto.email },
+        });
         if (!user) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
@@ -97,6 +102,7 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [jwt_1.JwtService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

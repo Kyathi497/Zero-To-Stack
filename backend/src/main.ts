@@ -30,8 +30,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(4000);
-  console.log('Backend running on http://localhost:4000');
+  const port = configService.get<number>('PORT') || 4000;
+  await app.listen(port);
+  console.log(`Backend running on http://localhost:${port}`);
 }
 
 bootstrap();
