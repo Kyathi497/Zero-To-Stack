@@ -7,24 +7,15 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "@/contexts/auth-context";
 
-const students = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAjWEjCX_Btu5sE8qxoaY-VUjOitFLdHo660pz48HOIfRrEeIY03k-Q1Q5ZJ-h2CKvRHF59u92H1-kYPmtKZc-NMtQxA8SnRiu-5iknseXiGu4wWHOCGV-7F3u4dBMoIrdh7OgWQjHyq3lrMesePgzDRKelIJx9uVELaiyz3eGAN0B64xrAel0Bjl7BpeGyGhlspY0hrGyMF-m76DaKq1xJRVPckGiKduABo2ChsQLn7uTp7_Mw-KYpk-6eASQ2ElGl5M4l-SxOD2M",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuA25CdGqzTtzkL4TqyEIMz9_cwIQ7FChu61ZiG7liV8wa47S2uI-O2Dr1Vng41Ald_fkK1v6XzkCG4mWIOo-d2yD2WtJ9AxlTwmFiRIfvg4hIdMjDdShkRjUJwb3oTwmc0cBIw4sy-3vBcP4CCGFzerJ9jrXHjPddgTYTlEpPtEaj18dGMmk6L8i5rCuiVEauVpzKpfMuhlP5L7kzhrisvYWi1xMTB3JJuHgIJVqefT12KGTSmLFGS5nMFiG-YGI0L1zYQuP06wbdg",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCkjBLVvxDwYbuTagFnnpUQR9iIpWaYOfY9_tcY6AaJwBxG1VRw-OT_piThGlIdC6egdUPIlC0NvanD8zvd9GW9cypK0YhP3caEXf8ue_qlGfLE59u-rsa1eXNnyN60AcpjLxcGs1OX8PUAeyz3sJrxLBXYW7qR7-leEcp5gjmi2NUKbXY-940ceWz8EIkeB6qUMlaSyc9l_npwcQFIg9hZ8ip1vG1YgsxSEngDlKWmGMgGyX4ApW7_7OlSa-yeGo8FY4-gNRwX4U0",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCQn_UHuLNj0zV9qg4ATlysNrmpt5mXO3as-feWogmW4a52R-GltCV2QF3oqS1w2n9bAb-nkm1ucjqL8ll-B587HCkf1mbUzEWy0CabC_ELaw8cQjzhghxTHsh7g4uJDX606JvuY1eeRGLr7T59a26zDfxYkwqstBSK8m6IZ7GkgdH6HrMbUA8-i0AbroOb7TEGS-SiuwmPZuUYY_AqsffNyUuLISr9e_4pxVxc6r60Rhla5vWdibBV6cK9F4ZXcSX6s2F9yDHrGio",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDWdWjC8AlZTDjUyQmFHIwffsVJi7KkCaOYKcAcRQ8h2662ciZ4cUHvARk_FH0XYxwiTGILTLTIUkVo-timLuIxXCNYmRXhCRbw-sR6_yatPU2CofHTMCWUGFsnERNs_8QKqyuxb2cyA3UJLVB2LBRlHzTA46-l-95i1peg88XK0RBAaxXxuMb51qIq6rfuMfqFMQJBwhBucHZTK5gTF8FRhvgSwVFK4JwIMsLmbQca3L-tL9ZATbnrQC_PeHTk4Jv7TvPOF1EjHgM",
-];
-
-const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 
-type SignupFields = z.infer<typeof signupSchema>;
+type LoginFields = z.infer<typeof loginSchema>;
 
-export default function SignUpPage() {
-  const { signup } = useAuth();
+export default function LoginPage() {
+  const { login } = useAuth();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -32,11 +23,11 @@ export default function SignUpPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SignupFields>({ resolver: zodResolver(signupSchema) });
+  } = useForm<LoginFields>({ resolver: zodResolver(loginSchema) });
 
-  async function onSubmit(values: SignupFields) {
+  async function onSubmit(values: LoginFields) {
     setServerError(null);
-    const result = await signup(values);
+    const result = await login(values.email, values.password);
     if (result.error) {
       setServerError(result.error);
     } else {
@@ -60,10 +51,10 @@ export default function SignUpPage() {
           <div className="p-8 md:p-10">
             <header className="text-center mb-10">
               <h1 className="text-white text-3xl font-extrabold font-headline tracking-tight mb-3 leading-tight">
-                Create Your Account
+                Welcome Back
               </h1>
               <p className="text-slate-400 text-sm font-medium">
-                Join 500+ students already learning
+                Log in to continue your journey
               </p>
             </header>
 
@@ -74,34 +65,7 @@ export default function SignUpPage() {
                 </div>
               )}
 
-              <div className="relative flex items-center py-2">
-                <div className="flex-grow border-t border-outline-variant/15"></div>
-                <span className="flex-shrink mx-4 text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Create account
-                </span>
-                <div className="flex-grow border-t border-outline-variant/15"></div>
-              </div>
-
               <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider ml-1">
-                    Full Name
-                  </label>
-                  <div className="relative group">
-                    <input
-                      {...register("name")}
-                      className="w-full h-12 bg-surface-container-lowest border-none text-white rounded-lg px-4 focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-slate-600"
-                      placeholder="Alex Johnson"
-                      type="text"
-                    />
-                  </div>
-                  {errors.name && (
-                    <p className="text-red-400 text-xs ml-1">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider ml-1">
                     Email Address
@@ -145,55 +109,21 @@ export default function SignUpPage() {
                   type="submit"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "Creating Account…" : "Start Building"}
+                  {isSubmitting ? "Logging in…" : "Log In"}
                 </button>
               </form>
-
-              <p className="text-center text-[11px] leading-relaxed text-slate-500 px-4">
-                By clicking &quot;Start Building&quot;, you agree to our{" "}
-                <a
-                  className="text-primary hover:text-white transition-colors underline decoration-primary/30"
-                  href="#"
-                >
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a
-                  className="text-primary hover:text-white transition-colors underline decoration-primary/30"
-                  href="#"
-                >
-                  Privacy Policy
-                </a>
-                .
-              </p>
             </div>
-          </div>
-
-          <div className="bg-surface-container py-5 px-8 flex items-center justify-center gap-4">
-            <div className="flex -space-x-3 overflow-hidden">
-              {students.map((src, index) => (
-                <img
-                  key={index}
-                  alt={`Student ${index + 1}`}
-                  className="inline-block h-8 w-8 rounded-full ring-2 ring-surface-container-low"
-                  src={src}
-                />
-              ))}
-            </div>
-            <span className="text-xs font-bold text-on-surface uppercase tracking-widest">
-              Join them today
-            </span>
           </div>
         </div>
 
         <div className="mt-8 text-center">
           <p className="text-slate-400 text-sm">
-            Already have an account?{" "}
+            Don&apos;t have an account?{" "}
             <a
               className="text-primary font-bold hover:text-white transition-colors ml-1"
-              href="/login"
+              href="/sign-up"
             >
-              Log in
+              Sign up
             </a>
           </p>
         </div>

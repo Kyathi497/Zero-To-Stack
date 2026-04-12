@@ -7,11 +7,201 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum ClassStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
 model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String
+  name           String
+  phone          String?
+  role           Role      @default(STUDENT)
+  emailVerified  Boolean   @default(false)
+  paymentStatus  Boolean   @default(false)
+  paymentDate    DateTime?
+  enrollmentDate DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  payments        Payment[]
+  refreshTokens   RefreshToken[]
+  studentProgress StudentProgress[]
+  videoProgress   VideoProgress[]
+}
+
+model RefreshToken {
   id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+model Payment {
+  id             String        @id @default(uuid())
+  studentId      String
+  amount         Int
+  currency       String        @default("INR")
+  paytmOrderId   String        @unique
+  paytmTxnId     String?       @unique
+  paytmTxnToken  String?
+  status         PaymentStatus @default(PENDING)
+  paymentMethod  String?
+  courseName     String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+}
+
+// ─── Courses & Modules ───────────────────────────────────────────────────────
+
+model Course {
+  id           String   @id @default(uuid())
+  courseName   String
+  description  String
+  startDate    DateTime
+  endDate      DateTime
+  totalModules Int      @default(0)
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  modules         Module[]
+  classes         Class[]
+  videos          Video[]
+  studentProgress StudentProgress[]
+}
+
+model Module {
+  id             String    @id @default(uuid())
+  courseId       String
+  moduleNumber   Int
+  title          String
+  description    String
+  completed      Boolean   @default(false)
+  completionDate DateTime?
+  estimatedHours Float     @default(0)
+
+  course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  classes  Class[]
+  videos   Video[]
+
+  @@index([courseId])
+}
+
+// ─── Live Classes ─────────────────────────────────────────────────────────────
+
+model Class {
+  id              String      @id @default(uuid())
+  courseId        String
+  moduleId        String?
+  topic           String
+  date            DateTime
+  startTime       DateTime
+  endTime         DateTime
+  meetLinkEnc     String?
+  recordingLink   String?
+  status          ClassStatus @default(SCHEDULED)
+  reminderSentAt  DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module Module? @relation(fields: [moduleId], references: [id])
+
+  @@index([courseId])
+  @@index([moduleId])
+}
+
+// ─── Videos ──────────────────────────────────────────────────────────────────
+
+model Video {
+  id          String   @id @default(uuid())
+  courseId    String
+  moduleId    String?
+  title       String
+  description String
+  s3Key       String
+  thumbnail   String?
+  duration    Int      @default(0)
+  restricted  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course   Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module   Module? @relation(fields: [moduleId], references: [id])
+  progress VideoProgress[]
+
+  @@index([courseId])
+  @@index([moduleId])
+}
+
+model VideoProgress {
+  id                   String   @id @default(uuid())
+  studentId            String
+  videoId              String
+  watchTime            Int      @default(0)
+  totalTime            Int      @default(0)
+  completionPercentage Float    @default(0)
+  markedComplete       Boolean  @default(false)
+  lastWatchedAt        DateTime @default(now())
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  video   Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, videoId])
+  @@index([studentId])
+  @@index([videoId])
+}
+
+// ─── Student Progress ────────────────────────────────────────────────────────
+
+model StudentProgress {
+  id                   String   @id @default(uuid())
+  studentId            String
+  courseId             String
+  enrollmentDate       DateTime @default(now())
+  completionPercentage Float    @default(0)
+  modulesCompleted     String[] @default([])
+  lastActivityDate     DateTime @default(now())
+  totalWatchHours      Float    @default(0)
+  streakDays           Int      @default(0)
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
 }
