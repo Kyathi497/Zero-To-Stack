@@ -7,8 +7,8 @@ export declare class AuthController {
     constructor(authService: AuthService);
     signup(dto: SignupDto, res: Response): Promise<{
         user: {
-            id: string;
             name: string;
+            id: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             paymentStatus: boolean;
@@ -16,8 +16,8 @@ export declare class AuthController {
     }>;
     login(dto: LoginDto, res: Response): Promise<{
         user: {
-            id: string;
             name: string;
+            id: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             paymentStatus: boolean;
@@ -25,8 +25,8 @@ export declare class AuthController {
     }>;
     refresh(req: Request, res: Response): Promise<Response<any, Record<string, any>> | {
         user: {
-            id: string;
             name: string;
+            id: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             paymentStatus: boolean;
@@ -36,13 +36,13 @@ export declare class AuthController {
         message: string;
     }>;
     me(req: Request): Promise<{
-        id: string;
-        enrollmentDate: Date;
         name: string;
-        createdAt: Date;
+        id: string;
         email: string;
         role: import("@prisma/client").$Enums.Role;
         paymentStatus: boolean;
+        enrollmentDate: Date;
+        createdAt: Date;
     }>;
     private setTokenCookies;
 }

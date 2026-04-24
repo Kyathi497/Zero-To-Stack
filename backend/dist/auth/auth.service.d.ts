@@ -10,8 +10,8 @@ export declare class AuthService {
     constructor(prisma: PrismaService, jwtService: JwtService, config: ConfigService);
     signup(dto: SignupDto): Promise<{
         user: {
-            id: string;
             name: string;
+            id: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             paymentStatus: boolean;
@@ -23,8 +23,8 @@ export declare class AuthService {
     }>;
     login(dto: LoginDto): Promise<{
         user: {
-            id: string;
             name: string;
+            id: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             paymentStatus: boolean;
@@ -36,8 +36,8 @@ export declare class AuthService {
     }>;
     refresh(oldRefreshToken: string): Promise<{
         user: {
-            id: string;
             name: string;
+            id: string;
             email: string;
             role: import("@prisma/client").$Enums.Role;
             paymentStatus: boolean;
@@ -49,13 +49,13 @@ export declare class AuthService {
     }>;
     logout(refreshToken: string): Promise<void>;
     me(userId: string): Promise<{
-        id: string;
-        enrollmentDate: Date;
         name: string;
-        createdAt: Date;
+        id: string;
         email: string;
         role: import("@prisma/client").$Enums.Role;
         paymentStatus: boolean;
+        enrollmentDate: Date;
+        createdAt: Date;
     }>;
     private generateTokens;
 }
