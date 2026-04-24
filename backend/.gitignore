@@ -1,5 +1,20 @@
 node_modules
-# Keep environment variables out of version control
 .env
+.env.*
 
+# compiled output
+dist/
+build/
+
+# typescript
+*.tsbuildinfo
+
+# prisma generated
 /src/generated/prisma
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*

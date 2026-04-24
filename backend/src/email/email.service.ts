@@ -9,7 +9,11 @@ export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private readonly config: ConfigService) {
-    this.resend = new Resend(config.get<string>('RESEND_API_KEY'));
+    const apiKey = config.get<string>('RESEND_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('RESEND_API_KEY not set — emails will be skipped');
+    }
+    this.resend = new Resend(apiKey ?? 're_placeholder');
     this.from = config.get<string>('EMAIL_FROM') ?? 'StackForge <noreply@stackforge.dev>';
   }
 

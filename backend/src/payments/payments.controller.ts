@@ -8,8 +8,8 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  Throttle,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { PaymentsService } from './payments.service';
 import { CreateOrderDto } from './dto/create-order.dto';

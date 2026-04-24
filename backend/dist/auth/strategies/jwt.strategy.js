@@ -15,18 +15,19 @@ const config_1 = require("@nestjs/config");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
-    constructor(configService) {
+    constructor(config) {
         super({
-            jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
+                (req) => req?.cookies?.access_token ?? null,
+            ]),
             ignoreExpiration: false,
-            secretOrKey: configService.get('JWT_SECRET') || 'stackforge-secret-key',
+            secretOrKey: config.get('JWT_SECRET') ?? 'stackforge-secret-key',
         });
     }
     async validate(payload) {
-        if (!payload.sub || !payload.email) {
+        if (!payload.sub || !payload.email)
             throw new common_1.UnauthorizedException();
-        }
-        return { id: payload.sub, email: payload.email };
+        return { id: payload.sub, email: payload.email, role: payload.role };
     }
 };
 exports.JwtStrategy = JwtStrategy;

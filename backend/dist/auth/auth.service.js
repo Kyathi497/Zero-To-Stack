@@ -45,64 +45,118 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const bcrypt = __importStar(require("bcrypt"));
+const crypto = __importStar(require("crypto"));
 const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
-    constructor(prisma, jwtService) {
+    constructor(prisma, jwtService, config) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.config = config;
     }
-    async signup(signupDto) {
-        const existingUser = await this.prisma.user.findUnique({
-            where: { email: signupDto.email },
+    async signup(dto) {
+        const existing = await this.prisma.user.findUnique({
+            where: { email: dto.email },
         });
-        if (existingUser) {
-            throw new common_1.ConflictException('Email already exists');
-        }
-        const hashedPassword = await bcrypt.hash(signupDto.password, 10);
+        if (existing)
+            throw new common_1.ConflictException('Email already registered');
+        const passwordHash = await bcrypt.hash(dto.password, 12);
         const user = await this.prisma.user.create({
             data: {
-                email: signupDto.email,
-                password: hashedPassword,
-                name: signupDto.name,
+                email: dto.email,
+                name: dto.name,
+                phone: dto.phone,
+                passwordHash,
             },
+            select: { id: true, email: true, name: true, role: true, paymentStatus: true },
         });
-        const token = this.jwtService.sign({ sub: user.id, email: user.email });
-        return {
-            access_token: token,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-            },
-        };
+        const tokens = await this.generateTokens(user.id, user.email, user.role);
+        return { user, tokens };
     }
-    async login(loginDto) {
+    async login(dto) {
         const user = await this.prisma.user.findUnique({
-            where: { email: loginDto.email },
-        });
-        if (!user) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
-        if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        const token = this.jwtService.sign({ sub: user.id, email: user.email });
-        return {
-            access_token: token,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
+            where: { email: dto.email },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                paymentStatus: true,
+                passwordHash: true,
             },
-        };
+        });
+        if (!user)
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        const valid = await bcrypt.compare(dto.password, user.passwordHash);
+        if (!valid)
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        const { passwordHash: _, ...safeUser } = user;
+        const tokens = await this.generateTokens(user.id, user.email, user.role);
+        return { user: safeUser, tokens };
+    }
+    async refresh(oldRefreshToken) {
+        const record = await this.prisma.refreshToken.findUnique({
+            where: { token: oldRefreshToken },
+        });
+        if (!record || record.revoked || record.expiresAt < new Date()) {
+            throw new common_1.UnauthorizedException('Invalid or expired refresh token');
+        }
+        await this.prisma.refreshToken.update({
+            where: { id: record.id },
+            data: { revoked: true },
+        });
+        const user = await this.prisma.user.findUnique({
+            where: { id: record.userId },
+            select: { id: true, email: true, name: true, role: true, paymentStatus: true },
+        });
+        if (!user)
+            throw new common_1.UnauthorizedException('User not found');
+        const tokens = await this.generateTokens(user.id, user.email, user.role);
+        return { user, tokens };
+    }
+    async logout(refreshToken) {
+        await this.prisma.refreshToken.updateMany({
+            where: { token: refreshToken, revoked: false },
+            data: { revoked: true },
+        });
+    }
+    async me(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                paymentStatus: true,
+                enrollmentDate: true,
+                createdAt: true,
+            },
+        });
+        if (!user)
+            throw new common_1.UnauthorizedException('User not found');
+        return user;
+    }
+    async generateTokens(userId, email, role) {
+        const accessToken = this.jwtService.sign({ sub: userId, email, role }, {
+            secret: this.config.get('JWT_SECRET'),
+            expiresIn: '15m',
+        });
+        const refreshToken = crypto.randomBytes(40).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        await this.prisma.refreshToken.create({
+            data: { userId, token: refreshToken, expiresAt },
+        });
+        return { accessToken, refreshToken };
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        config_1.ConfigService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

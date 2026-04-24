@@ -17,33 +17,112 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const signup_dto_1 = require("./dto/signup.dto");
 const login_dto_1 = require("./dto/login.dto");
+const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
+const COOKIE_OPTS_BASE = {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+};
+const isProd = process.env.NODE_ENV === 'production';
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
-    async signup(signupDto) {
-        return this.authService.signup(signupDto);
+    async signup(dto, res) {
+        const { user, tokens } = await this.authService.signup(dto);
+        this.setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+        return { user };
     }
-    async login(loginDto) {
-        return this.authService.login(loginDto);
+    async login(dto, res) {
+        const { user, tokens } = await this.authService.login(dto);
+        this.setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+        return { user };
+    }
+    async refresh(req, res) {
+        const oldToken = req.cookies?.refresh_token;
+        if (!oldToken) {
+            res.clearCookie('access_token');
+            res.clearCookie('refresh_token');
+            return res.status(common_1.HttpStatus.UNAUTHORIZED).json({
+                success: false,
+                data: null,
+                error: { code: 'NO_REFRESH_TOKEN', message: 'No refresh token provided' },
+            });
+        }
+        const { user, tokens } = await this.authService.refresh(oldToken);
+        this.setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
+        return { user };
+    }
+    async logout(req, res) {
+        const refreshToken = req.cookies?.refresh_token;
+        if (refreshToken)
+            await this.authService.logout(refreshToken);
+        res.clearCookie('access_token', { path: '/' });
+        res.clearCookie('refresh_token', { path: '/' });
+        return { message: 'Logged out' };
+    }
+    async me(req) {
+        const user = req.user;
+        return this.authService.me(user.id);
+    }
+    setTokenCookies(res, accessToken, refreshToken) {
+        res.cookie('access_token', accessToken, {
+            ...COOKIE_OPTS_BASE,
+            secure: isProd,
+            maxAge: 15 * 60 * 1000,
+        });
+        res.cookie('refresh_token', refreshToken, {
+            ...COOKIE_OPTS_BASE,
+            secure: isProd,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
     }
 };
 exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('signup'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [signup_dto_1.SignupDto]),
+    __metadata("design:paramtypes", [signup_dto_1.SignupDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "signup", null);
 __decorate([
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('refresh'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refresh", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
+__decorate([
+    (0, common_1.Get)('me'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "me", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

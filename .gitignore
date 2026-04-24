@@ -1,2 +1,21 @@
 node_modules/
 .next/
+.env
+.env.*
+.DS_Store
+*.pem
+
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# misc docs generated during setup
+AUTH_TESTING_GUIDE.md
+BACKEND_SETUP.md
+COMPLETION_CHECKLIST.md
+CONFIG_REFERENCE.md
+FRONTEND_AUTH_SETUP.md
+IMPLEMENTATION_SUMMARY.md
+QUICK_START.md

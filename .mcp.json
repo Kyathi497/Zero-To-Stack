@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "code-review-graph": {
-      "command": "code-review-graph",
+      "command": "/mnt/c/Users/kyath/AppData/Roaming/Python/Python313/Scripts/code-review-graph.exe",
       "args": [
         "serve"
       ],

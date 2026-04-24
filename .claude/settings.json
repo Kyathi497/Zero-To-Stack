@@ -19,5 +19,14 @@
         "timeout": 10000
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Read(//c/Users/kyath/.claude/projects/c--Users-kyath-Desktop-Zero-To-Stack/memory/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\kyath\\.claude\\projects\\c--Users-kyath-Desktop-Zero-To-Stack\\memory"
+    ]
   }
 }

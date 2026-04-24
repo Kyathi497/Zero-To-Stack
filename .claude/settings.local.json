@@ -10,7 +10,13 @@
       "Bash(pg_isready)",
       "Bash(Get-Service -Name postgresql*)",
       "Bash(Get-Service -Name *postgres*)",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Read(//c/Users/kyath/.claude/**)",
+      "Bash(pnpm add *)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const {PrismaClient} = require\\('@prisma/client'\\); const c = new PrismaClient\\(\\); console.log\\(Object.keys\\(c\\).filter\\(k => !k.startsWith\\('_'\\)\\).slice\\(0,5\\)\\)\")",
+      "Bash(node -e \"const t = require\\('@prisma/adapter-neon'\\); console.log\\(Object.keys\\(t\\)\\)\")",
+      "Bash(git rm *)"
     ]
   }
 }
