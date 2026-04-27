@@ -18,12 +18,14 @@ export async function login(email: string, password: string): Promise<AuthRespon
     credentials: "include",
   });
 
+  const body = await res.json();
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error?.message || "Login failed");
+    throw new Error(body.error?.message || "Login failed");
   }
 
-  return res.json();
+  const data = body.data ?? body;
+  return { user: data.user ?? data };
 }
 
 export async function register(
@@ -39,12 +41,14 @@ export async function register(
     credentials: "include",
   });
 
+  const body = await res.json();
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error?.message || "Registration failed");
+    throw new Error(body.error?.message || "Registration failed");
   }
 
-  return res.json();
+  const data = body.data ?? body;
+  return { user: data.user ?? data };
 }
 
 export async function logout(): Promise<void> {
@@ -60,8 +64,9 @@ export async function getCurrentUser(): Promise<AuthResponse["user"] | null> {
       credentials: "include",
     });
     if (!res.ok) return null;
-    const data = await res.json();
-    return data.user || data;
+    const body = await res.json();
+    const data = body.data ?? body;
+    return data.user ?? data;
   } catch {
     return null;
   }

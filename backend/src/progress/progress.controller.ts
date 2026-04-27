@@ -61,6 +61,12 @@ export class AdminProgressController {
     return this.progressService.getAllStudents();
   }
 
+  // Dashboard-enriched student list (currentModule, streakDays, risk)
+  @Get('students/dashboard')
+  getAllStudentsForDashboard() {
+    return this.progressService.getAllStudentsForDashboard();
+  }
+
   // CSV export
   @Get('students/export')
   async exportCsv(@Res() res: Response) {

@@ -8,12 +8,17 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Headers,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AdminGuard } from './guards/admin.guard';
 
 const COOKIE_OPTS_BASE = {
   httpOnly: true,
@@ -25,7 +30,10 @@ const isProd = process.env.NODE_ENV === 'production';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
@@ -63,9 +71,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken: string = req.cookies?.refresh_token;
-    if (refreshToken) await this.authService.logout(refreshToken);
+  logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
     return { message: 'Logged out' };
@@ -76,6 +82,26 @@ export class AuthController {
   async me(@Req() req: Request) {
     const user = req.user as { id: string };
     return this.authService.me(user.id);
+  }
+
+  @Post('admin')
+  @HttpCode(HttpStatus.CREATED)
+  async createAdmin(
+    @Body() dto: CreateAdminDto,
+    @Headers('x-admin-secret') adminSecret: string | undefined,
+    @Req() req: Request,
+  ) {
+    const hasAdminJwt =
+      req.cookies?.access_token &&
+      (req.user as { role: string } | undefined)?.role === 'ADMIN';
+    const validSecret =
+      adminSecret === this.configService.get<string>('ADMIN_SECRET');
+
+    if (!hasAdminJwt && !validSecret) {
+      throw new ForbiddenException('Admin access required');
+    }
+
+    return this.authService.createAdmin(dto);
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────

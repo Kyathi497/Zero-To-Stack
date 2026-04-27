@@ -41,7 +41,7 @@ export default function StudentTable({ students }: StudentTableProps) {
                 {s.progress}% · {s.currentModule}
               </div>
             </div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{s.attendance}%</div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 12 }}>{s.attendance > 0 ? `${s.attendance}%` : "—"}</div>
             <div>
               <span
                 className="db-risk-badge"

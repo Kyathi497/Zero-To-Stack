@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 export declare class AuthController {
     private readonly authService;
-    constructor(authService: AuthService);
+    private readonly configService;
+    constructor(authService: AuthService, configService: ConfigService);
     signup(dto: SignupDto, res: Response): Promise<{
         user: {
             name: string;
@@ -32,9 +35,9 @@ export declare class AuthController {
             paymentStatus: boolean;
         };
     }>;
-    logout(req: Request, res: Response): Promise<{
+    logout(res: Response): {
         message: string;
-    }>;
+    };
     me(req: Request): Promise<{
         name: string;
         id: string;
@@ -43,6 +46,12 @@ export declare class AuthController {
         paymentStatus: boolean;
         enrollmentDate: Date;
         createdAt: Date;
+    }>;
+    createAdmin(dto: CreateAdminDto, adminSecret: string | undefined, req: Request): Promise<{
+        name: string;
+        id: string;
+        email: string;
+        role: import("@prisma/client").$Enums.Role;
     }>;
     private setTokenCookies;
 }

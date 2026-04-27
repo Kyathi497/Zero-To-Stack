@@ -47,7 +47,6 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const bcrypt = __importStar(require("bcrypt"));
-const crypto = __importStar(require("crypto"));
 const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
     constructor(prisma, jwtService, config) {
@@ -71,7 +70,7 @@ let AuthService = class AuthService {
             },
             select: { id: true, email: true, name: true, role: true, paymentStatus: true },
         });
-        const tokens = await this.generateTokens(user.id, user.email, user.role);
+        const tokens = this.generateTokens(user.id, user.email, user.role);
         return { user, tokens };
     }
     async login(dto) {
@@ -92,34 +91,27 @@ let AuthService = class AuthService {
         if (!valid)
             throw new common_1.UnauthorizedException('Invalid credentials');
         const { passwordHash: _, ...safeUser } = user;
-        const tokens = await this.generateTokens(user.id, user.email, user.role);
+        const tokens = this.generateTokens(user.id, user.email, user.role);
         return { user: safeUser, tokens };
     }
     async refresh(oldRefreshToken) {
-        const record = await this.prisma.refreshToken.findUnique({
-            where: { token: oldRefreshToken },
-        });
-        if (!record || record.revoked || record.expiresAt < new Date()) {
+        let payload;
+        try {
+            payload = this.jwtService.verify(oldRefreshToken, {
+                secret: this.config.get('JWT_REFRESH_SECRET'),
+            });
+        }
+        catch {
             throw new common_1.UnauthorizedException('Invalid or expired refresh token');
         }
-        await this.prisma.refreshToken.update({
-            where: { id: record.id },
-            data: { revoked: true },
-        });
         const user = await this.prisma.user.findUnique({
-            where: { id: record.userId },
+            where: { id: payload.sub },
             select: { id: true, email: true, name: true, role: true, paymentStatus: true },
         });
         if (!user)
             throw new common_1.UnauthorizedException('User not found');
-        const tokens = await this.generateTokens(user.id, user.email, user.role);
+        const tokens = this.generateTokens(user.id, user.email, user.role);
         return { user, tokens };
-    }
-    async logout(refreshToken) {
-        await this.prisma.refreshToken.updateMany({
-            where: { token: refreshToken, revoked: false },
-            data: { revoked: true },
-        });
     }
     async me(userId) {
         const user = await this.prisma.user.findUnique({
@@ -138,16 +130,33 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('User not found');
         return user;
     }
-    async generateTokens(userId, email, role) {
+    async createAdmin(dto) {
+        const existing = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+        });
+        if (existing)
+            throw new common_1.ConflictException('Email already registered');
+        const passwordHash = await bcrypt.hash(dto.password, 12);
+        const user = await this.prisma.user.create({
+            data: {
+                email: dto.email,
+                name: dto.name,
+                phone: dto.phone,
+                passwordHash,
+                role: 'ADMIN',
+            },
+            select: { id: true, email: true, name: true, role: true },
+        });
+        return user;
+    }
+    generateTokens(userId, email, role) {
         const accessToken = this.jwtService.sign({ sub: userId, email, role }, {
             secret: this.config.get('JWT_SECRET'),
             expiresIn: '15m',
         });
-        const refreshToken = crypto.randomBytes(40).toString('hex');
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-        await this.prisma.refreshToken.create({
-            data: { userId, token: refreshToken, expiresAt },
+        const refreshToken = this.jwtService.sign({ sub: userId, email, role }, {
+            secret: this.config.get('JWT_REFRESH_SECRET'),
+            expiresIn: '7d',
         });
         return { accessToken, refreshToken };
     }

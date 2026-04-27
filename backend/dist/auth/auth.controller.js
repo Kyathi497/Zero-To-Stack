@@ -14,9 +14,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const auth_service_1 = require("./auth.service");
 const signup_dto_1 = require("./dto/signup.dto");
 const login_dto_1 = require("./dto/login.dto");
+const create_admin_dto_1 = require("./dto/create-admin.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const COOKIE_OPTS_BASE = {
     httpOnly: true,
@@ -25,8 +27,9 @@ const COOKIE_OPTS_BASE = {
 };
 const isProd = process.env.NODE_ENV === 'production';
 let AuthController = class AuthController {
-    constructor(authService) {
+    constructor(authService, configService) {
         this.authService = authService;
+        this.configService = configService;
     }
     async signup(dto, res) {
         const { user, tokens } = await this.authService.signup(dto);
@@ -53,10 +56,7 @@ let AuthController = class AuthController {
         this.setTokenCookies(res, tokens.accessToken, tokens.refreshToken);
         return { user };
     }
-    async logout(req, res) {
-        const refreshToken = req.cookies?.refresh_token;
-        if (refreshToken)
-            await this.authService.logout(refreshToken);
+    logout(res) {
         res.clearCookie('access_token', { path: '/' });
         res.clearCookie('refresh_token', { path: '/' });
         return { message: 'Logged out' };
@@ -64,6 +64,15 @@ let AuthController = class AuthController {
     async me(req) {
         const user = req.user;
         return this.authService.me(user.id);
+    }
+    async createAdmin(dto, adminSecret, req) {
+        const hasAdminJwt = req.cookies?.access_token &&
+            req.user?.role === 'ADMIN';
+        const validSecret = adminSecret === this.configService.get('ADMIN_SECRET');
+        if (!hasAdminJwt && !validSecret) {
+            throw new common_1.ForbiddenException('Admin access required');
+        }
+        return this.authService.createAdmin(dto);
     }
     setTokenCookies(res, accessToken, refreshToken) {
         res.cookie('access_token', accessToken, {
@@ -109,11 +118,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)('logout'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Res)({ passthrough: true })),
+    __param(0, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
 ], AuthController.prototype, "logout", null);
 __decorate([
     (0, common_1.Get)('me'),
@@ -123,8 +131,19 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
+__decorate([
+    (0, common_1.Post)('admin'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('x-admin-secret')),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_admin_dto_1.CreateAdminDto, String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "createAdmin", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService,
+        config_1.ConfigService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map

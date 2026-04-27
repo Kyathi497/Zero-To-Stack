@@ -162,6 +162,29 @@
   border: 1px solid var(--line);
 }
 
+.db-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dimmer);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.db-logout-btn:hover {
+  background: rgba(232,80,10,.08);
+  color: var(--orange);
+  border-color: rgba(232,80,10,.2);
+}
+
 .db-avatar {
   width: 36px;
   height: 36px;
@@ -1259,6 +1282,8 @@
   .db-nav-item { padding: 10px; justify-content: center; }
   .db-nav-icon { width: 22px; height: 22px; }
   .db-user-card { padding: 8px; justify-content: center; }
+  .db-logout-btn { padding: 10px; justify-content: center; }
+  .db-logout-btn > span:not(.db-nav-icon) { display: none; }
   .db-cohort-hero { grid-template-columns: 1fr; }
   .db-cohort-kpis { gap: 16px; }
 }

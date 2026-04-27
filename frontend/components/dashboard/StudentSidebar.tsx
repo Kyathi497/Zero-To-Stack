@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { logout } from "@/lib/auth";
 
 type NavItem = { label: string; icon: string; href: string; badge?: string };
 type NavGroup = { group: string; items: NavItem[] };
@@ -20,6 +21,12 @@ const NAV: NavGroup[] = [
 
 export default function StudentSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await logout();
+    router.push("/login");
+  }
 
   return (
     <aside className="db-sidebar">
@@ -53,6 +60,10 @@ export default function StudentSidebar() {
             <div className="db-user-meta">BATCH · 2026-A</div>
           </div>
         </div>
+        <button onClick={handleLogout} className="db-logout-btn">
+          <span className="db-nav-icon">⎋</span>
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   );

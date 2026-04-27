@@ -18,8 +18,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      router.push("/dashboard/student");
+      const { user } = await login(email, password);
+      router.push(user.role === "ADMIN" ? "/admin" : "/student");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

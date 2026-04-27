@@ -168,6 +168,75 @@ export class ProgressService {
     }));
   }
 
+  // ─── Admin: enriched student list for dashboard ────────────────────────────
+
+  async getAllStudentsForDashboard() {
+    const students = await this.prisma.user.findMany({
+      where: { role: 'STUDENT' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        paymentStatus: true,
+        studentProgress: {
+          select: {
+            completionPercentage: true,
+            streakDays: true,
+            lastActivityDate: true,
+            modulesCompleted: true,
+            course: {
+              select: {
+                modules: {
+                  orderBy: { moduleNumber: 'asc' },
+                  select: { id: true, title: true },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return students.map((s) => {
+      const p = s.studentProgress;
+      const avgCompletion =
+        p.length
+          ? p.reduce((a, x) => a + x.completionPercentage, 0) / p.length
+          : 0;
+      const streakDays =
+        p.length ? Math.max(...p.map((x) => x.streakDays)) : 0;
+      const lastActive =
+        p.length
+          ? p
+              .map((x) => x.lastActivityDate)
+              .sort((a, b) => b.getTime() - a.getTime())[0]
+          : null;
+
+      let currentModule = 'Not enrolled';
+      for (const sp of p) {
+        const first = sp.course.modules.find(
+          (m) => !sp.modulesCompleted.includes(m.id),
+        );
+        if (first) {
+          currentModule = first.title;
+          break;
+        }
+      }
+
+      return {
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        paymentStatus: s.paymentStatus,
+        avgCompletion,
+        streakDays,
+        currentModule,
+        lastActive,
+      };
+    });
+  }
+
   // ─── Admin: all students (platform-wide) ───────────────────────────────────
 
   async getAllStudents() {

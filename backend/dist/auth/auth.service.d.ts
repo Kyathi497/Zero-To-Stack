@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
 export declare class AuthService {
     private readonly prisma;
     private readonly jwtService;
@@ -47,7 +48,6 @@ export declare class AuthService {
             refreshToken: string;
         };
     }>;
-    logout(refreshToken: string): Promise<void>;
     me(userId: string): Promise<{
         name: string;
         id: string;
@@ -56,6 +56,12 @@ export declare class AuthService {
         paymentStatus: boolean;
         enrollmentDate: Date;
         createdAt: Date;
+    }>;
+    createAdmin(dto: CreateAdminDto): Promise<{
+        name: string;
+        id: string;
+        email: string;
+        role: import("@prisma/client").$Enums.Role;
     }>;
     private generateTokens;
 }
